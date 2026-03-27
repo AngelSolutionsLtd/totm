@@ -1,1 +1,596 @@
-ello world
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thinker of the Month</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<style>
+  :root {
+    --blue-dark:  #0b3565;
+    --blue-mid:   #1660a8;
+    --blue-sky:   #2d88d4;
+    --blue-light: #4aaae8;
+    --gold:       #e0b020;
+    --gold-lt:    #f7d44c;
+    --white:      #ffffff;
+    --drum-h:     64px; /* height of one name row in the drum */
+  }
+ 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+ 
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(180deg,
+      var(--blue-dark)  0%,
+      var(--blue-mid)  42%,
+      var(--blue-sky)  75%,
+      var(--blue-light) 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+ 
+  /* ─── ANGEL LOGO ─────────────────────────────────────────── */
+  .angel-logo {
+    position: fixed;
+    top: 20px;
+    left: 24px;
+    width: 160px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ─── CLOUDS ──────────────────────────────────────────────── */
+ 
+  .cloud-drift {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 300px;
+    background: url(assets/clouds.svg) top center no-repeat;
+    background-size: cover;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+ 
+  /* ─── PAGE ────────────────────────────────────────────────── */
+  .page {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 620px;
+    padding: 20px 20px 28px;
+    gap: 0;
+  }
+ 
+  /* ─── HEADER ──────────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    animation: dropIn .7s cubic-bezier(.34,1.4,.64,1) both;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1) rotate(0deg); }
+    25%     { transform: scale(1.12) rotate(-6deg); }
+    75%     { transform: scale(1.12) rotate(6deg); }
+  }
+  .title {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(30px, 6.5vw, 54px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.05;
+    text-shadow: 0 3px 0 rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.28);
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-top: 6px;
+  }
+  @keyframes dropIn {
+    from { opacity: 0; transform: translateY(-30px) scale(.9); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+ 
+  /* ─── DRUM WRAPPER ────────────────────────────────────────── */
+  .drum-card {
+    width: 100%;
+    max-width: 500px;
+    background: rgba(255,255,255,0.16);
+    border: 2px solid rgba(255,255,255,0.32);
+    border-radius: 32px;
+    padding: 28px 24px 26px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.4);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    animation: riseUp .7s cubic-bezier(.34,1.4,.64,1) .12s both;
+    position: relative;
+  }
+  @keyframes riseUp {
+    from { opacity: 0; transform: translateY(32px) scale(.95); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+ 
+  .drum-label {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-lt);
+    margin-bottom: 14px;
+  }
+ 
+  /* ─── THE SLOT DRUM ───────────────────────────────────────── */
+  .drum {
+    position: relative;
+    height: calc(var(--drum-h) * 5); /* shows 5 rows; centre one is the winner */
+    overflow: hidden;
+    border-radius: 18px;
+    background: rgba(0,0,0,0.18);
+    border: 1.5px solid rgba(255,255,255,0.18);
+  }
+ 
+  /* fade top & bottom */
+  .drum::before,
+  .drum::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 38%;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .drum::before {
+    top: 0;
+    background: linear-gradient(to bottom,
+      rgba(13,52,101,0.92) 0%,
+      rgba(13,52,101,0.0) 100%);
+  }
+  .drum::after {
+    bottom: 0;
+    background: linear-gradient(to top,
+      rgba(13,52,101,0.92) 0%,
+      rgba(13,52,101,0.0) 100%);
+  }
+ 
+  /* highlight window in the centre */
+  .drum-window {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: var(--drum-h);
+    border-top: 2px solid rgba(255,255,255,0.28);
+    border-bottom: 2px solid rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.07);
+    z-index: 2;
+    pointer-events: none;
+    border-radius: 4px;
+  }
+  .drum-window.winner-glow {
+    background: rgba(247,212,76,0.12);
+    border-color: rgba(247,212,76,0.55);
+    box-shadow: 0 0 24px rgba(247,212,76,0.25);
+    transition: background .3s, border-color .3s, box-shadow .3s;
+  }
+ 
+  /* scrolling strip */
+  .drum-strip {
+    position: absolute;
+    left: 0; right: 0;
+    top: 0;
+    will-change: transform;
+  }
+ 
+  .drum-name {
+    height: var(--drum-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(22px, 4.5vw, 34px);
+    font-weight: 700;
+    color: rgba(255,255,255,0.82);
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 20px;
+  }
+  .drum-name.center {
+    font-weight: 800;
+    color: var(--white);
+    font-size: clamp(26px, 5.5vw, 42px);
+  }
+  .drum-name.winner-name {
+    color: var(--gold-lt);
+    text-shadow: 0 0 20px rgba(247,212,76,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  }
+ 
+  .name-count {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.38);
+    margin-top: 14px;
+    letter-spacing: 0.08em;
+  }
+ 
+  /* halo burst ring */
+  .halo-ring {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%,-50%) scale(0);
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-lt);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .halo-ring.burst { animation: haloOut .85s ease-out forwards; }
+  @keyframes haloOut {
+    0%   { transform: translate(-50%,-50%) scale(.1); opacity: .9; }
+    100% { transform: translate(-50%,-50%) scale(3.5); opacity: 0; }
+  }
+ 
+  /* ─── BUTTON ──────────────────────────────────────────────── */
+  .btn-area {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: riseUp .7s cubic-bezier(.34,1.4,.64,1) .25s both;
+  }
+ 
+  .btn-pick {
+    font-family: 'Baloo 2', cursive;
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--blue-dark);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-lt) 100%);
+    border: none;
+    border-radius: 100px;
+    padding: 14px 56px 12px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.2);
+    transition: transform .1s ease, box-shadow .1s ease, background .2s, color .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-pick:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 9px 0 rgba(0,0,0,0.2), 0 16px 40px rgba(0,0,0,0.22);
+  }
+  .btn-pick:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .btn-pick:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-pick.golden {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-lt) 100%);
+    color: var(--blue-dark);
+  }
+ 
+  /* ─── HISTORY ─────────────────────────────────────────────── */
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+ 
+  /* ─── SETUP HINT ──────────────────────────────────────────── */
+  .hint {
+    position: fixed;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,255,255,.75);
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+  }
+  .hint code {
+    background: rgba(255,255,255,.15);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<img class="angel-logo" src="assets/angel-logo.svg" alt="Angel logo">
+ 
+<!-- ═══════════════════════════════════════════════
+     SET YOUR GOOGLE SHEET URL HERE
+     File → Share → Publish to web → CSV → copy URL
+     Leave empty '' to use demo names
+════════════════════════════════════════════════ -->
+<script>const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS-zC9l_vZ4gnOCngyOktnr15p8ZvId6cVp2L5tOpXEK-uvWN13TJHJ_yhp4HwRvS6EaAup6TCqoedx/pub?output=csv';</script>
+ 
+<!-- Background clouds -->
+<div class="cloud-drift"></div>
+ 
+<!-- Page -->
+<div class="page">
+ 
+  <div class="header">
+<div class="title">Thinker of the Month</div>
+    <div class="subtitle">Who will it be?</div>
+  </div>
+ 
+  <div class="drum-card">
+    <div class="drum-label" id="drum-label">✦ Ready to pick ✦</div>
+ 
+    <div class="drum" id="drum">
+      <div class="drum-window" id="drum-window"></div>
+      <div class="halo-ring"  id="halo-ring"></div>
+      <div class="drum-strip" id="drum-strip">
+        <!-- populated by JS -->
+      </div>
+    </div>
+ 
+    <div class="name-count" id="name-count"></div>
+  </div>
+ 
+  <div class="btn-area">
+    <button class="btn-pick" id="btn-pick" disabled onclick="handlePick()">
+      Loading…
+    </button>
+  </div>
+ 
+ 
+</div>
+ 
+ 
+<script>
+ 
+/* ── STATE ────────────────────────────────────────────────── */
+let allNames   = [];
+let spinning   = false;
+let lastWinner = null;
+let winners    = [];
+ 
+const ROW_H    = 64;   // must match --drum-h
+const VISIBLE  = 5;    // visible rows in drum
+const DRUM_H   = ROW_H * VISIBLE;
+ 
+/* ── INIT ─────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadNames();
+  buildDrum();
+});
+ 
+async function loadNames() {
+  const label = document.getElementById('drum-label');
+  const btn   = document.getElementById('btn-pick');
+  label.textContent = '⏳ Loading names…';
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+
+  try {
+    const res  = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = text.split('\n').map(r => r.replace(/\r/g,'').trim()).filter(Boolean);
+    const first = rows[0]?.toLowerCase();
+    const skip  = (first === 'name' || first === 'names' || !first.includes(' ')) ? 1 : 0;
+    allNames = rows.slice(skip).filter(Boolean);
+    if (!allNames.length) throw new Error('No names found');
+    label.textContent = '✦ Ready to roll ✦';
+  } catch(e) {
+    console.warn('Sheet fetch failed:', e);
+    label.textContent = '⚠️ Failed to load names';
+    btn.textContent = 'Unavailable';
+    btn.disabled = true;
+  }
+}
+ 
+/* ── BUILD INITIAL DRUM ───────────────────────────────────── */
+function buildDrum() {
+  if (!allNames.length) return;
+ 
+  const strip = document.getElementById('drum-strip');
+  strip.innerHTML = '';
+ 
+  // We'll render a long list; anchor item at index ANCHOR will be centred
+  renderStrip(allNames, 0);
+ 
+  const btn = document.getElementById('btn-pick');
+  btn.disabled = false;
+  btn.textContent = '🎲 Roll the Drum';
+ 
+  document.getElementById('name-count').textContent =
+    `${allNames.length} name${allNames.length !== 1 ? 's' : ''} loaded`;
+ 
+  centreOnIndex(0, false);
+}
+ 
+/* ── RENDER STRIP ─────────────────────────────────────────── */
+// Builds many copies of the name list end-to-end so the drum
+// looks like an infinite loop. Returns total item count.
+const COPIES = 12; // enough for a long spin
+ 
+function renderStrip(names, highlightIdx) {
+  const strip = document.getElementById('drum-strip');
+  strip.innerHTML = '';
+  const total = names.length * COPIES;
+  for (let i = 0; i < total; i++) {
+    const div = document.createElement('div');
+    div.className = 'drum-name';
+    div.textContent = names[i % names.length];
+    strip.appendChild(div);
+  }
+  return total;
+}
+ 
+/* ── CENTRE STRIP ON ITEM INDEX ───────────────────────────── */
+// The drum shows VISIBLE rows. The centre row = index 2 (0-based).
+// We want item `idx` to appear at the centre.
+// translateY = -(idx * ROW_H) + (VISIBLE/2 - 0.5) * ROW_H
+function yForIndex(idx) {
+  return -(idx * ROW_H) + Math.floor(VISIBLE / 2) * ROW_H;
+}
+ 
+function centreOnIndex(idx, animate) {
+  const strip = document.getElementById('drum-strip');
+  strip.style.transition = animate ? '' : 'none';
+  strip.style.transform  = `translateY(${yForIndex(idx)}px)`;
+}
+ 
+/* ── MAIN PICK ────────────────────────────────────────────── */
+function handlePick() {
+  if (spinning) return;
+ 
+  let pool = [...allNames];
+ 
+  const winnerName = pool[Math.floor(Math.random() * pool.length)];
+  startSpin(winnerName);
+}
+ 
+/* ── SPIN ─────────────────────────────────────────────────── */
+function startSpin(winnerName) {
+  spinning = true;
+ 
+  const btn   = document.getElementById('btn-pick');
+  const label = document.getElementById('drum-label');
+  const strip = document.getElementById('drum-strip');
+  const win   = document.getElementById('drum-window');
+ 
+  btn.disabled    = true;
+  btn.textContent = 'Rolling…';
+  label.textContent = '✦ Thinker of the Month ✦';
+  win.classList.remove('winner-glow');
+ 
+  // Re-render strip with all names (pool doesn't matter for visuals)
+  renderStrip(allNames, -1);
+ 
+  // Pick a start position near the top of the middle copies
+  const midCopy   = Math.floor(COPIES / 2);
+  const startIdx  = midCopy * allNames.length + 2;
+  centreOnIndex(startIdx, false);
+ 
+  // Force reflow so we can animate from here
+  strip.getBoundingClientRect();
+ 
+  // We want to end on winnerName. Find the nearest occurrence of
+  // winnerName in the strip after a big forward scroll.
+  const totalItems = allNames.length * COPIES;
+  const spinItems  = Math.floor(allNames.length * 5.5); // ~5.5 full rotations
+  const rawEnd     = startIdx + spinItems;
+ 
+  // Snap raw end forward to the nearest occurrence of winnerName
+  const winnerLocalIdx = allNames.indexOf(winnerName);
+  let   endIdx = rawEnd;
+  const rem    = rawEnd % allNames.length;
+  let   diff   = winnerLocalIdx - rem;
+  if (diff < 0) diff += allNames.length;
+  endIdx = rawEnd + diff;
+ 
+  // Safety — stay within rendered strip
+  if (endIdx >= totalItems - VISIBLE) endIdx -= allNames.length;
+ 
+  // Total pixel distance to travel
+  const totalPx = (endIdx - startIdx) * ROW_H;
+ 
+  // Animation via requestAnimationFrame with ease-out-quint
+  const DURATION = 6500; // ms
+  let   startTime = null;
+  const fromY     = yForIndex(startIdx);
+  const toY       = yForIndex(endIdx);
+ 
+  function easeOutQuint(t) { return 1 - Math.pow(1 - t, 5); }
+ 
+  function frame(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+    const t       = Math.min(elapsed / DURATION, 1);
+    const eased   = easeOutQuint(t);
+    const currentY = fromY + (toY - fromY) * eased;
+ 
+    strip.style.transition = 'none';
+    strip.style.transform  = `translateY(${currentY}px)`;
+ 
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      finishSpin(winnerName, endIdx);
+    }
+  }
+ 
+  requestAnimationFrame(frame);
+}
+ 
+/* ── FINISH ───────────────────────────────────────────────── */
+function finishSpin(winnerName, endIdx) {
+  spinning   = false;
+  lastWinner = winnerName;
+  winners.unshift(winnerName);
+ 
+  const btn   = document.getElementById('btn-pick');
+  const label = document.getElementById('drum-label');
+  const win   = document.getElementById('drum-window');
+  const ring  = document.getElementById('halo-ring');
+  const strip = document.getElementById('drum-strip');
+ 
+  // Highlight centre name
+  const centreEl = strip.children[endIdx];
+  if (centreEl) {
+    centreEl.classList.add('center', 'winner-name');
+  }
+ 
+  label.textContent = "🧠 This month's thinker!";
+  win.classList.add('winner-glow');
+ 
+  // Halo burst
+  ring.classList.remove('burst');
+  void ring.offsetWidth;
+  ring.classList.add('burst');
+ 
+  // Confetti
+  const opts = {
+    particleCount: 130, spread: 80, startVelocity: 46, gravity: .92, ticks: 320,
+    colors: ['#ffffff','#f7d44c','#e0b020','#4aaae8','#2d88d4'],
+    shapes: ['circle','square'], scalar: 1.1,
+  };
+  confetti({ ...opts, origin: { x: .28, y: .55 } });
+  setTimeout(() => confetti({ ...opts, origin: { x: .72, y: .55 } }), 170);
+  setTimeout(() => confetti({ ...opts, particleCount: 70, origin: { x: .5, y: .38 } }), 340);
+ 
+  // Button
+  btn.disabled    = false;
+  btn.textContent = '🎲 Roll Again';
+  btn.classList.add('golden');
+  setTimeout(() => btn.classList.remove('golden'), 900);
+ 
+}
+</script>
+</body>
+</html>
+ 

@@ -371,6 +371,22 @@
  
 <script>
  
+/* ── AUDIO ────────────────────────────────────────────────── */
+const sfxDrumRoll = new Audio('assets/drum-roll.mp3');
+const sfxTada     = new Audio('assets/ta-da.mp3');
+
+function playDrumRoll() {
+  sfxDrumRoll.currentTime = 0;
+  sfxDrumRoll.play();
+}
+
+function playTada() {
+  sfxDrumRoll.pause();
+  sfxDrumRoll.currentTime = 0;
+  sfxTada.currentTime = 0;
+  sfxTada.play();
+}
+
 /* ── STATE ────────────────────────────────────────────────── */
 let allNames   = [];
 let spinning   = false;
@@ -435,7 +451,7 @@ function buildDrum() {
 /* ── RENDER STRIP ─────────────────────────────────────────── */
 // Builds many copies of the name list end-to-end so the drum
 // looks like an infinite loop. Returns total item count.
-const COPIES = 12; // enough for a long spin
+const COPIES = 20; // enough for a long spin with small name lists
  
 function renderStrip(names, highlightIdx) {
   const strip = document.getElementById('drum-strip');
@@ -486,25 +502,26 @@ function startSpin(winnerName) {
   btn.disabled    = true;
   btn.textContent = 'Rolling…';
   label.textContent = '✦ Thinker of the Month ✦';
+  playDrumRoll();
   win.classList.remove('winner-glow');
  
-  // Re-render strip with all names (pool doesn't matter for visuals)
+  // Re-render strip with all names
   renderStrip(allNames, -1);
- 
-  // Pick a start position near the top of the middle copies
-  const midCopy   = Math.floor(COPIES / 2);
-  const startIdx  = midCopy * allNames.length + 2;
-  centreOnIndex(startIdx, false);
- 
-  // Force reflow so we can animate from here
+
+  // Derive start position from wherever the strip currently sits visually
+  const rawTransform = strip.style.transform;
+  const fromY = rawTransform ? parseFloat(rawTransform.replace('translateY(', '')) : yForIndex(2);
+  const startIdx = Math.round((yForIndex(0) - fromY) / ROW_H);
+
+  // Force reflow
   strip.getBoundingClientRect();
- 
+
   // We want to end on winnerName. Find the nearest occurrence of
   // winnerName in the strip after a big forward scroll.
   const totalItems = allNames.length * COPIES;
   const spinItems  = Math.floor(allNames.length * 5.5); // ~5.5 full rotations
   const rawEnd     = startIdx + spinItems;
- 
+
   // Snap raw end forward to the nearest occurrence of winnerName
   const winnerLocalIdx = allNames.indexOf(winnerName);
   let   endIdx = rawEnd;
@@ -512,26 +529,27 @@ function startSpin(winnerName) {
   let   diff   = winnerLocalIdx - rem;
   if (diff < 0) diff += allNames.length;
   endIdx = rawEnd + diff;
- 
+
   // Safety — stay within rendered strip
   if (endIdx >= totalItems - VISIBLE) endIdx -= allNames.length;
- 
-  // Total pixel distance to travel
-  const totalPx = (endIdx - startIdx) * ROW_H;
- 
-  // Animation via requestAnimationFrame with ease-out-quint
+
+  // Animation via requestAnimationFrame with custom ease
   const DURATION = 6500; // ms
   let   startTime = null;
-  const fromY     = yForIndex(startIdx);
   const toY       = yForIndex(endIdx);
- 
-  function easeOutQuint(t) { return 1 - Math.pow(1 - t, 5); }
- 
+
+  // Smooth ease-in-out: accelerates then decelerates gradually
+  function easeSpin(t) {
+    return t < 0.5
+      ? 4 * t * t * t
+      : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
   function frame(ts) {
     if (!startTime) startTime = ts;
     const elapsed = ts - startTime;
     const t       = Math.min(elapsed / DURATION, 1);
-    const eased   = easeOutQuint(t);
+    const eased   = easeSpin(t);
     const currentY = fromY + (toY - fromY) * eased;
  
     strip.style.transition = 'none';
@@ -573,6 +591,9 @@ function finishSpin(winnerName, endIdx) {
   void ring.offsetWidth;
   ring.classList.add('burst');
  
+  // Tada
+  playTada();
+
   // Confetti
   const opts = {
     particleCount: 130, spread: 80, startVelocity: 46, gravity: .92, ticks: 320,

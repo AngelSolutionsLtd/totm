@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nominations — Thinker of the Month</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark:  #0b3565;
+    --blue-mid:   #1660a8;
+    --blue-sky:   #2d88d4;
+    --blue-light: #4aaae8;
+    --gold:       #e0b020;
+    --gold-lt:    #f7d44c;
+    --white:      #ffffff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(180deg,
+      var(--blue-dark)  0%,
+      var(--blue-mid)  42%,
+      var(--blue-sky)  75%,
+      var(--blue-light) 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ─── ANGEL LOGO ─────────────────────────────────────────── */
+  .angel-logo {
+    position: fixed;
+    top: 20px;
+    left: 24px;
+    width: 160px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ─── BACK LINK ───────────────────────────────────────────── */
+  .back-link {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    font-family: 'Baloo 2', cursive;
+    font-size: 14px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    z-index: 10;
+    transition: color .2s;
+  }
+  .back-link:hover { color: var(--white); }
+
+  /* ─── CLOUDS ──────────────────────────────────────────────── */
+  .cloud-drift {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 300px;
+    background: url(assets/clouds.svg) top center no-repeat;
+    background-size: cover;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ─── PAGE ────────────────────────────────────────────────── */
+  .page {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 680px;
+    padding: 0 24px 80px;
+  }
+
+  /* ─── HEADER ──────────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .title {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 800;
+    color: var(--white);
+    text-shadow: 0 3px 0 rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.28);
+  }
+  .subtitle {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-top: 6px;
+  }
+
+  /* ─── CAROUSEL ────────────────────────────────────────────── */
+  .carousel {
+    width: 100%;
+    display: grid;
+  }
+
+  .card {
+    grid-area: 1 / 1;
+    background: rgba(255,255,255,0.13);
+    border: 2px solid rgba(255,255,255,0.28);
+    border-radius: 28px;
+    padding: 36px 40px 32px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 12px 48px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    transition: opacity .8s ease;
+    pointer-events: none;
+  }
+  .card.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+
+  .card-name {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 800;
+    color: var(--gold-lt);
+    margin-bottom: 16px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .card-divider {
+    width: 48px;
+    height: 3px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  .card-reason {
+    font-size: clamp(15px, 2.5vw, 18px);
+    font-weight: 600;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ─── ARROWS ─────────────────────────────────────────────── */
+  .arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(224,176,32,0.2);
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--gold-lt);
+    font-size: 18px;
+    transition: background .2s;
+    z-index: 5;
+    user-select: none;
+  }
+  .arrow:hover { background: rgba(224,176,32,0.4); }
+  .arrow-left  { left: -56px; }
+  .arrow-right { right: -56px; }
+
+  /* ─── DOTS ────────────────────────────────────────────────── */
+  .dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 32px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: background .3s, transform .3s;
+  }
+  .dot.active {
+    background: var(--gold-lt);
+    transform: scale(1.3);
+  }
+
+  /* ─── LOADING / ERROR ─────────────────────────────────────── */
+  .carousel {
+    min-height: 280px;
+    display: grid;
+    place-items: center;
+  }
+  .status {
+    color: rgba(255,255,255,0.7);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<img class="angel-logo" src="assets/angel-logo.svg" alt="Angel logo">
+<a class="back-link" href="index.html">← Back</a>
+<div class="cloud-drift"></div>
+
+<div class="page">
+  <div class="header">
+    <div class="title">Nominations</div>
+    <div class="subtitle">This month's thinkers</div>
+  </div>
+
+  <div style="position:relative; width:100%;">
+  <button class="arrow arrow-left" onclick="step(-1)">&#8592;</button>
+  <button class="arrow arrow-right" onclick="step(1)">&#8594;</button>
+  <div class="carousel" id="carousel">
+    <div class="status" id="status">⏳ Loading nominations…</div>
+  </div>
+
+  </div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS-zC9l_vZ4gnOCngyOktnr15p8ZvId6cVp2L5tOpXEK-uvWN13TJHJ_yhp4HwRvS6EaAup6TCqoedx/pub?output=csv';
+const ROTATE_MS = 5000;
+
+let nominations = [];
+let current = 0;
+let timer = null;
+
+
+async function load() {
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = text.split('\n').map(r => r.replace(/\r/g, '').trim()).filter(Boolean);
+    const first = rows[0]?.toLowerCase();
+    const skip = first.startsWith('name') || first.startsWith('"name') ? 1 : 0;
+    nominations = rows.slice(skip).map(row => {
+      const cols = row.match(/(".*?"|[^,]+)(?=,|$)/g) || [row];
+      const name   = cols[0]?.replace(/^"|"$/g, '').trim();
+      const reason = cols[1]?.replace(/^"|"$/g, '').trim() || '';
+      return { name, reason };
+    }).filter(n => n.name);
+
+    if (!nominations.length) throw new Error('No nominations found');
+    build();
+  } catch(e) {
+    document.getElementById('status').textContent = '⚠️ Failed to load nominations';
+  }
+}
+
+function build() {
+  const carousel = document.getElementById('carousel');
+  const dotsEl   = document.getElementById('dots');
+  carousel.innerHTML = '';
+  dotsEl.innerHTML  = '';
+
+  nominations.forEach((n, i) => {
+    // Card
+    const card = document.createElement('div');
+    card.className = 'card' + (i === 0 ? ' active' : '');
+    card.innerHTML = `
+      <div class="card-name">${n.name}</div>
+      <div class="card-divider"></div>
+      <div class="card-reason">${n.reason || 'No nomination text provided.'}</div>
+    `;
+    carousel.appendChild(card);
+
+    // Dot
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(dot);
+  });
+
+  // Set carousel min-height based on tallest card
+  startRotation();
+}
+
+function goTo(idx) {
+  const cards = document.querySelectorAll('.card');
+  const dots  = document.querySelectorAll('.dot');
+  cards[current].classList.remove('active');
+  dots[current].classList.remove('active');
+  current = idx;
+  cards[current].classList.add('active');
+  dots[current].classList.add('active');
+}
+
+function step(dir) {
+  clearInterval(timer);
+  goTo((current + dir + nominations.length) % nominations.length);
+  startRotation();
+}
+
+function startRotation() {
+  timer = setInterval(() => {
+    goTo((current + 1) % nominations.length);
+  }, ROTATE_MS);
+}
+
+load();
+</script>
+</body>
+</html>
